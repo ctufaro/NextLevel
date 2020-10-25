@@ -35,6 +35,14 @@ public final class MetalCameraSession: NSObject {
     /// `MTLDevice` we need to initialize texture cache
     fileprivate var metalDevice = MTLCreateSystemDefaultDevice()
     
+    /// Current session state.
+    public var state: MetalCameraSessionState = .waiting {
+        didSet {
+            guard state != .error else { return }
+            delegate?.metalCameraSession(self, didUpdateState: state, error: nil)
+        }
+    }
+    
     public init(pixelFormat: MetalCameraPixelFormat = .rgb, delegate: MetalCameraSessionDelegate? = nil) {
         self.pixelFormat = pixelFormat
         self.delegate = delegate
@@ -50,6 +58,14 @@ public final class MetalCameraSession: NSObject {
         }
         catch {
         }
+    }
+    
+    public func handleError(_ error: MetalCameraSessionError) {
+        if error.isStreamingError() {
+            state = .error
+        }
+
+        delegate?.metalCameraSession(self, didUpdateState: state, error: error)
     }
     
     public func initializeTextureCache() throws {

@@ -84,14 +84,14 @@ class CameraViewController: MTKViewController {
         let screenBounds = UIScreen.main.bounds
 
         // preview
-        self.previewView = UIView(frame: screenBounds)
-        if let previewView = self.previewView {
-            previewView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            previewView.backgroundColor = UIColor.black
+        //self.previewView = UIView(frame: screenBounds)
+        //if let previewView = self.previewView {
+            //previewView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            //previewView.backgroundColor = UIColor.black
             //NextLevel.shared.previewLayer.frame = previewView.bounds
             //previewView.layer.addSublayer(NextLevel.shared.previewLayer)
             //self.view.addSubview(previewView)
-        }
+        //}
         
         
         self.focusView = FocusIndicatorView(frame: .zero)
@@ -173,6 +173,9 @@ class CameraViewController: MTKViewController {
         nextLevel.photoDelegate = self
         nextLevel.metadataObjectsDelegate = self
         
+        // metal configuration
+        nextLevel.metalCameraSession = session!
+        
         // video configuration
         nextLevel.videoConfiguration.preset = AVCaptureSession.Preset.hd1280x720
         nextLevel.videoConfiguration.bitRate = 5500000
@@ -185,8 +188,7 @@ class CameraViewController: MTKViewController {
         // metadata objects configuration
         nextLevel.metadataObjectTypes = [AVMetadataObject.ObjectType.face, AVMetadataObject.ObjectType.qr]
         
-        // metal configuration
-        nextLevel.metalCameraSession = session!
+        
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -196,6 +198,8 @@ class CameraViewController: MTKViewController {
            NextLevel.authorizationStatus(forMediaType: AVMediaType.audio) == .authorized {
             do {
                 try NextLevel.shared.start()
+                // Metal Camera Session Starting
+                self.session?.start()
             } catch {
                 print("NextLevel, failed to start camera session")
             }
@@ -207,6 +211,8 @@ class CameraViewController: MTKViewController {
                     do {
                         let nextLevel = NextLevel.shared
                         try nextLevel.start()
+                        // Metal Camera Session Starting
+                        self.session?.start()
                     } catch {
                         print("NextLevel, failed to start camera session")
                     }
@@ -222,6 +228,8 @@ class CameraViewController: MTKViewController {
                     do {
                         let nextLevel = NextLevel.shared
                         try nextLevel.start()
+                        // Metal Camera Session Starting
+                        self.session?.start()
                     } catch {
                         print("NextLevel, failed to start camera session")
                     }
@@ -232,8 +240,7 @@ class CameraViewController: MTKViewController {
             }
         }
     
-        // Metal Camera Session Starting
-        session?.start()
+        
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -823,6 +830,7 @@ extension CameraViewController: MetalCameraSessionDelegate {
         
         DispatchQueue.main.async {
             self.title = "Metal camera: \(state)"
+            
         }
         
         NSLog("Session changed state to \(state) with error: \(error?.localizedDescription ?? "None").")

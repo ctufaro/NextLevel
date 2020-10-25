@@ -633,10 +633,15 @@ extension NextLevel {
     
     internal func setupAVSession() {
         // Note: use nextLevelSessionDidStart to ensure a device and session are available for configuration or format changes
-        self.executeClosureAsyncOnSessionQueueIfNecessary {
+        self.executeClosureAsyncOnSessionQueueIfNecessary { [self] in
             // setup AV capture sesssion
             self._captureSession = AVCaptureSession()
             self._sessionConfigurationCount = 0
+            
+            // Metal Session Ready
+            if self.metalCameraSession?.state != .streaming && self.metalCameraSession?.state != .error {
+                self.metalCameraSession?.state = .ready
+            }
             
             // setup NL recording session
             self._recordingSession = NextLevelSession(queue: self._sessionQueue, queueKey: NextLevelCaptureSessionQueueSpecificKey)
@@ -657,6 +662,7 @@ extension NextLevel {
                 if session.isRunning == false {
                     self.delegate?.nextLevelSessionWillStart(self)
                     session.startRunning()
+                    self.metalCameraSession!.state = .streaming
                     self.previewDelegate?.nextLevelWillStartPreview(self)
                     
                     // nextLevelSessionDidStart is called from AVFoundation
@@ -1015,9 +1021,10 @@ extension NextLevel {
         if self._videoOutput == nil {
             self._videoOutput = AVCaptureVideoDataOutput()
             self._videoOutput?.alwaysDiscardsLateVideoFrames = false
-            
+            let videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+            /*
             var videoSettings = [String(kCVPixelBufferPixelFormatTypeKey):Int(kCVPixelFormatType_32BGRA)]
-            #if !( targetEnvironment(simulator) )
+            #if !( targetEnvironment(simulator) )x
                 if let formatTypes = self._videoOutput?.availableVideoPixelFormatTypes {
                     var supportsFullRange = false
                     var supportsVideoRange = false
@@ -1036,6 +1043,7 @@ extension NextLevel {
                     }
                 }
             #endif
+            */
             self._videoOutput?.videoSettings = videoSettings
         }
         
@@ -2711,13 +2719,13 @@ extension NextLevel {
 extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     
     public func captureOutput(_ captureOutput: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        
         if self.captureMode == .videoWithoutAudio && captureOutput == self._videoOutput {
             self.videoDelegate?.nextLevel(self, willProcessRawVideoSampleBuffer: sampleBuffer, onQueue: self._sessionQueue)
             self._lastVideoFrame = sampleBuffer
             if let session = self._recordingSession {
                 self.handleVideoOutput(sampleBuffer: sampleBuffer, session: session)
                 self.metalCameraSession?.captureOutput(captureOutput, didOutput: sampleBuffer, from: connection)
-                
             }
         } else if let videoOutput = self._videoOutput,
             let audioOutput = self._audioOutput {
