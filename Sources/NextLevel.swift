@@ -257,7 +257,7 @@ public class NextLevel: NSObject {
     public var metalCameraSession: MetalCameraSession?
     
     /// Live camera preview, add as a sublayer to the UIView's primary layer.
-    public var previewLayer: AVCaptureVideoPreviewLayer
+    ////public var previewLayer: AVCaptureVideoPreviewLayer
     
     // capture configuration
     
@@ -462,8 +462,8 @@ public class NextLevel: NSObject {
     // MARK: - object lifecycle
     
     public override init() {
-        self.previewLayer = AVCaptureVideoPreviewLayer()
-        self.previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
+        ////self.previewLayer = AVCaptureVideoPreviewLayer()
+        ////self.previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
         
         self._sessionQueue = DispatchQueue(label: NextLevelCaptureSessionQueueIdentifier, qos: .userInteractive, target: DispatchQueue.global())
         self._sessionQueue.setSpecific(key: NextLevelCaptureSessionQueueSpecificKey, value: ())
@@ -505,7 +505,7 @@ public class NextLevel: NSObject {
             self.commitConfiguration()
         }
         
-        self.previewLayer.session = nil
+        ////self.previewLayer.session = nil
         
         self._currentDevice = nil
         
@@ -645,7 +645,7 @@ extension NextLevel {
                 session.automaticallyConfiguresApplicationAudioSession = self.automaticallyConfiguresApplicationAudioSession
                 
                 self.beginConfiguration()
-                self.previewLayer.session = session
+                ////self.previewLayer.session = session
                 
                 self.configureSession()
                 self.configureSessionDevices()
@@ -1261,16 +1261,16 @@ extension NextLevel {
     
     /// Freezes the live camera preview layer.
     public func freezePreview() {
-        if let previewConnection = self.previewLayer.connection {
+        /*if let previewConnection = self.previewLayer.connection {
             previewConnection.isEnabled = false
-        }
+        }*/
     }
     
     /// Un-freezes the live camera preview layer.
     public func unfreezePreview() {
-        if let previewConnection = self.previewLayer.connection {
+        /*if let previewConnection = self.previewLayer.connection {
             previewConnection.isEnabled = true
-        }
+        }*/
     }
 }
 
@@ -1328,12 +1328,12 @@ extension NextLevel {
         var didChangeOrientation = false
         let currentOrientation = AVCaptureVideoOrientation.avorientationFromUIDeviceOrientation(UIDevice.current.orientation)
         
-        if let previewConnection = self.previewLayer.connection {
+        /*if let previewConnection = self.previewLayer.connection {
             if previewConnection.isVideoOrientationSupported && previewConnection.videoOrientation != currentOrientation {
                 previewConnection.videoOrientation = currentOrientation
                 didChangeOrientation = true
             }
-        }
+        }*/
         
         if let videoOutput = self._videoOutput, let videoConnection = videoOutput.connection(with: AVMediaType.video) {
             if videoConnection.isVideoOrientationSupported && videoConnection.videoOrientation != currentOrientation {
@@ -1372,6 +1372,8 @@ extension NextLevel {
     // mirroring
     
     /// Changes the current capture device's mirroring mode.
+    
+    /*
     public var mirroringMode: NextLevelMirroringMode {
         get {
             if let pc = self.previewLayer.connection {
@@ -1434,7 +1436,7 @@ extension NextLevel {
             }
         }
     }
-    
+    */
 }
 
 // MARK: - flash and torch
@@ -2867,12 +2869,14 @@ extension NextLevel: AVCaptureMetadataOutputObjectsDelegate {
 
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         // convert metadata object coordinates to preview layer coordinates
+        /*
         let convertedMetadataObjects = metadataObjects.compactMap { metadataObject in
             return self.previewLayer.transformedMetadataObject(for: metadataObject)
         }
 
         // main queue is explicitly specified during configuration
         self.metadataObjectsDelegate?.metadataOutputObjects(self, didOutput: convertedMetadataObjects)
+        */
     }
 
 }

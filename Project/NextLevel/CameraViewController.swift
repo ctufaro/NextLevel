@@ -84,16 +84,15 @@ class CameraViewController: MTKViewController {
         let screenBounds = UIScreen.main.bounds
 
         // preview
-        /* RETIRE PREVIEW
         self.previewView = UIView(frame: screenBounds)
         if let previewView = self.previewView {
             previewView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             previewView.backgroundColor = UIColor.black
-            NextLevel.shared.previewLayer.frame = previewView.bounds
-            previewView.layer.addSublayer(NextLevel.shared.previewLayer)
-            self.view.addSubview(previewView)
+            //NextLevel.shared.previewLayer.frame = previewView.bounds
+            //previewView.layer.addSublayer(NextLevel.shared.previewLayer)
+            //self.view.addSubview(previewView)
         }
-        */
+        
         
         self.focusView = FocusIndicatorView(frame: .zero)
         
@@ -493,8 +492,8 @@ extension CameraViewController {
             focusView.startAnimation()
         }
         
-        let adjustedPoint = NextLevel.shared.previewLayer.captureDevicePointConverted(fromLayerPoint: tapPoint)
-        NextLevel.shared.focusExposeAndAdjustWhiteBalance(atAdjustedPoint: adjustedPoint)
+        //let adjustedPoint = NextLevel.shared.previewLayer.captureDevicePointConverted(fromLayerPoint: tapPoint)
+        //NextLevel.shared.focusExposeAndAdjustWhiteBalance(atAdjustedPoint: adjustedPoint)
     }
     
 }
