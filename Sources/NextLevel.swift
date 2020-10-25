@@ -254,6 +254,8 @@ public class NextLevel: NSObject {
 
     // preview
     
+    public var metalCameraSession: MetalCameraSession?
+    
     /// Live camera preview, add as a sublayer to the UIView's primary layer.
     public var previewLayer: AVCaptureVideoPreviewLayer
     
@@ -2712,6 +2714,8 @@ extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudi
             self._lastVideoFrame = sampleBuffer
             if let session = self._recordingSession {
                 self.handleVideoOutput(sampleBuffer: sampleBuffer, session: session)
+                self.metalCameraSession?.captureOutput(captureOutput, didOutput: sampleBuffer, from: connection)
+                
             }
         } else if let videoOutput = self._videoOutput,
             let audioOutput = self._audioOutput {
@@ -2721,6 +2725,7 @@ extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudi
                 self._lastVideoFrame = sampleBuffer
                 if let session = self._recordingSession {
                     self.handleVideoOutput(sampleBuffer: sampleBuffer, session: session)
+                    self.metalCameraSession?.captureOutput(captureOutput, didOutput: sampleBuffer, from: connection)
                 }
                 break
             case audioOutput:

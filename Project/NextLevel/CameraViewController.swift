@@ -25,9 +25,9 @@
 import UIKit
 import AVFoundation
 import Photos
-//import NextLevel
+import Metal
 
-class CameraViewController: UIViewController {
+class CameraViewController: MTKViewController {
 
     // MARK: - UIViewController
 
@@ -37,6 +37,7 @@ class CameraViewController: UIViewController {
     
     // MARK: - properties
     
+    internal var session: MetalCameraSession?
     internal var previewView: UIView?
     internal var gestureView: UIView?
     internal var focusView: FocusIndicatorView?
@@ -70,10 +71,12 @@ class CameraViewController: UIViewController {
     deinit {
     }
     
-    // MARK: - view lifecycle
-
+    // MARK: - Next Level View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Metal Camera Session Instantiate
+        session = MetalCameraSession(delegate:self)
 
         self.view.backgroundColor = UIColor.black
         self.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -81,6 +84,7 @@ class CameraViewController: UIViewController {
         let screenBounds = UIScreen.main.bounds
 
         // preview
+        /* RETIRE PREVIEW
         self.previewView = UIView(frame: screenBounds)
         if let previewView = self.previewView {
             previewView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -89,6 +93,7 @@ class CameraViewController: UIViewController {
             previewView.layer.addSublayer(NextLevel.shared.previewLayer)
             self.view.addSubview(previewView)
         }
+        */
         
         self.focusView = FocusIndicatorView(frame: .zero)
         
@@ -180,6 +185,9 @@ class CameraViewController: UIViewController {
 
         // metadata objects configuration
         nextLevel.metadataObjectTypes = [AVMetadataObject.ObjectType.face, AVMetadataObject.ObjectType.qr]
+        
+        // metal configuration
+        nextLevel.metalCameraSession = session!
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -224,15 +232,19 @@ class CameraViewController: UIViewController {
                 }
             }
         }
+    
+        // Metal Camera Session Starting
+        session?.start()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
         NextLevel.shared.stop()
     }
-    
+
 }
+
+
 
 // MARK: - library
 
@@ -795,3 +807,25 @@ extension CameraViewController: NextLevelMetadataOutputObjectsDelegate {
     }
 }
 
+// MARK: - MetalCameraSessionDelegate
+extension CameraViewController: MetalCameraSessionDelegate {
+    func metalCameraSession(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
+        self.texture = textures[0]
+    }
+    
+    func metalCameraSession(_ cameraSession: MetalCameraSession, didUpdateState state: MetalCameraSessionState, error: MetalCameraSessionError?) {
+        
+        if error == .captureSessionRuntimeError {
+            /**
+             *  In this app we are going to ignore capture session runtime errors
+             */
+            cameraSession.start()
+        }
+        
+        DispatchQueue.main.async {
+            self.title = "Metal camera: \(state)"
+        }
+        
+        NSLog("Session changed state to \(state) with error: \(error?.localizedDescription ?? "None").")
+    }
+}
