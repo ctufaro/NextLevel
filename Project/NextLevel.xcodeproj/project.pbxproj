@@ -39,9 +39,8 @@
 		06DB04A621C5ABA9007877CC /* NextLevelBufferRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06DB04A421C5ABA9007877CC /* NextLevelBufferRenderer.swift */; };
 		6A3D083C1FFCCC4B001E4AB1 /* NextLevel+UIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3D083B1FFCCC4B001E4AB1 /* NextLevel+UIImage.swift */; };
 		6A3D083D1FFCCC5A001E4AB1 /* NextLevel+UIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3D083B1FFCCC4B001E4AB1 /* NextLevel+UIImage.swift */; };
-		D9C41F602545CD8A001A31AF /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D9C41F5F2545CD8A001A31AF /* Shaders.metal */; };
-		D9C41F642545CDC5001A31AF /* MTKViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C41F632545CDC5001A31AF /* MTKViewController.swift */; };
-		D9C41F6A2545CFCE001A31AF /* NextLevelMetal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C41F692545CFCE001A31AF /* NextLevelMetal.swift */; };
+		D9C41F7B25465D4E001A31AF /* PreviewMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C41F7A25465D4E001A31AF /* PreviewMetalView.swift */; };
+		D9C41F8E25466DC6001A31AF /* PassThrough.metal in Sources */ = {isa = PBXBuildFile; fileRef = D9C41F8D25466DC6001A31AF /* PassThrough.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,9 +70,8 @@
 		06CF9CE81F70678D0011CE09 /* NextLevel+CMSampleBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NextLevel+CMSampleBuffer.swift"; path = "../Sources/NextLevel+CMSampleBuffer.swift"; sourceTree = "<group>"; };
 		06DB04A421C5ABA9007877CC /* NextLevelBufferRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NextLevelBufferRenderer.swift; path = ../Sources/NextLevelBufferRenderer.swift; sourceTree = "<group>"; };
 		6A3D083B1FFCCC4B001E4AB1 /* NextLevel+UIImage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "NextLevel+UIImage.swift"; path = "../Sources/NextLevel+UIImage.swift"; sourceTree = "<group>"; };
-		D9C41F5F2545CD8A001A31AF /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
-		D9C41F632545CDC5001A31AF /* MTKViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTKViewController.swift; sourceTree = "<group>"; };
-		D9C41F692545CFCE001A31AF /* NextLevelMetal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextLevelMetal.swift; sourceTree = "<group>"; };
+		D9C41F7A25465D4E001A31AF /* PreviewMetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewMetalView.swift; sourceTree = "<group>"; };
+		D9C41F8D25466DC6001A31AF /* PassThrough.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PassThrough.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,7 +106,6 @@
 			children = (
 				060D50F31D5C4D5A00247AD0 /* NextLevelClip.swift */,
 				060D50EE1D5BC77E00247AD0 /* NextLevelSession.swift */,
-				D9C41F692545CFCE001A31AF /* NextLevelMetal.swift */,
 			);
 			name = Session;
 			sourceTree = "<group>";
@@ -135,7 +132,7 @@
 		06AECC611AC3830800EFCD03 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				D9C41F5E2545CD5A001A31AF /* MetalKit View Controller */,
+				D9C41F5E2545CD5A001A31AF /* MetalKit */,
 				06AECC641AC3830800EFCD03 /* AppDelegate.swift */,
 				06AECC661AC3830800EFCD03 /* CameraViewController.swift */,
 				0684A22F1EC22C1C00A9F9EB /* FocusIndicatorView.swift */,
@@ -194,13 +191,21 @@
 			name = Extensions;
 			sourceTree = "<group>";
 		};
-		D9C41F5E2545CD5A001A31AF /* MetalKit View Controller */ = {
+		D9C41F5E2545CD5A001A31AF /* MetalKit */ = {
 			isa = PBXGroup;
 			children = (
-				D9C41F632545CDC5001A31AF /* MTKViewController.swift */,
-				D9C41F5F2545CD8A001A31AF /* Shaders.metal */,
+				D9C41F8625466D91001A31AF /* Shaders */,
+				D9C41F7A25465D4E001A31AF /* PreviewMetalView.swift */,
 			);
-			name = "MetalKit View Controller";
+			name = MetalKit;
+			sourceTree = "<group>";
+		};
+		D9C41F8625466D91001A31AF /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				D9C41F8D25466DC6001A31AF /* PassThrough.metal */,
+			);
+			name = Shaders;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -317,23 +322,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				06DB04A521C5ABA9007877CC /* NextLevelBufferRenderer.swift in Sources */,
+				D9C41F7B25465D4E001A31AF /* PreviewMetalView.swift in Sources */,
 				6A3D083C1FFCCC4B001E4AB1 /* NextLevel+UIImage.swift in Sources */,
-				D9C41F6A2545CFCE001A31AF /* NextLevelMetal.swift in Sources */,
 				06AECC671AC3830800EFCD03 /* CameraViewController.swift in Sources */,
 				06C86E391D81DD5800A43411 /* NextLevel+AVFoundation.swift in Sources */,
-				D9C41F602545CD8A001A31AF /* Shaders.metal in Sources */,
 				06CF9CE91F70678D0011CE09 /* NextLevel+CMSampleBuffer.swift in Sources */,
 				0699B4BD1D7942D4005958BC /* NextLevel+Foundation.swift in Sources */,
 				0684A2301EC22C1C00A9F9EB /* FocusIndicatorView.swift in Sources */,
 				060D50EF1D5BC77E00247AD0 /* NextLevelSession.swift in Sources */,
 				060D50F41D5C4D5A00247AD0 /* NextLevelClip.swift in Sources */,
 				060D50F11D5BF09F00247AD0 /* NextLevelConfiguration.swift in Sources */,
-				D9C41F642545CDC5001A31AF /* MTKViewController.swift in Sources */,
 				065FD1A222741D2A00580C6C /* NextLevelGIFCreator.swift in Sources */,
 				06AECC881AC38B3700EFCD03 /* NextLevel.swift in Sources */,
 				06BA97691D7FFDF200CD20D7 /* NextLevel+Metadata.swift in Sources */,
 				06AECC651AC3830800EFCD03 /* AppDelegate.swift in Sources */,
 				067FCFCB213DB3B700B9B6C2 /* NextLevelProtocols.swift in Sources */,
+				D9C41F8E25466DC6001A31AF /* PassThrough.metal in Sources */,
 				06CF9CE61F7064170011CE09 /* NextLevel+CIContext.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -252,9 +252,8 @@ public class NextLevel: NSObject {
     public weak var portraitEffectsMatteDelegate: NextLevelPortraitEffectsMatteDelegate?
     public weak var metadataObjectsDelegate: NextLevelMetadataOutputObjectsDelegate?
 
-    // preview
-    
-    public var metalCameraSession: MetalCameraSession?
+    // Metal Properties
+    internal var mtkView: PreviewMetalView?
     
     /// Live camera preview, add as a sublayer to the UIView's primary layer.
     ////public var previewLayer: AVCaptureVideoPreviewLayer
@@ -639,9 +638,6 @@ extension NextLevel {
             self._sessionConfigurationCount = 0
             
             // Metal Session Ready
-            if self.metalCameraSession?.state != .streaming && self.metalCameraSession?.state != .error {
-                self.metalCameraSession?.state = .ready
-            }
             
             // setup NL recording session
             self._recordingSession = NextLevelSession(queue: self._sessionQueue, queueKey: NextLevelCaptureSessionQueueSpecificKey)
@@ -662,9 +658,7 @@ extension NextLevel {
                 if session.isRunning == false {
                     self.delegate?.nextLevelSessionWillStart(self)
                     session.startRunning()
-                    self.metalCameraSession!.state = .streaming
                     self.previewDelegate?.nextLevelWillStartPreview(self)
-                    
                     // nextLevelSessionDidStart is called from AVFoundation
                 }
             }
@@ -2718,14 +2712,13 @@ extension NextLevel {
 
 extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
     
-    public func captureOutput(_ captureOutput: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        
+    public func captureOutput(_ captureOutput: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
+    {
         if self.captureMode == .videoWithoutAudio && captureOutput == self._videoOutput {
             self.videoDelegate?.nextLevel(self, willProcessRawVideoSampleBuffer: sampleBuffer, onQueue: self._sessionQueue)
             self._lastVideoFrame = sampleBuffer
             if let session = self._recordingSession {
                 self.handleVideoOutput(sampleBuffer: sampleBuffer, session: session)
-                self.metalCameraSession?.captureOutput(captureOutput, didOutput: sampleBuffer, from: connection)
             }
         } else if let videoOutput = self._videoOutput,
             let audioOutput = self._audioOutput {
@@ -2735,7 +2728,6 @@ extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudi
                 self._lastVideoFrame = sampleBuffer
                 if let session = self._recordingSession {
                     self.handleVideoOutput(sampleBuffer: sampleBuffer, session: session)
-                    self.metalCameraSession?.captureOutput(captureOutput, didOutput: sampleBuffer, from: connection)
                 }
                 break
             case audioOutput:
@@ -2748,6 +2740,13 @@ extension NextLevel: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudi
                 break
             }
         }
+        
+        guard let videoPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+            let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+                return
+        }
+        
+        self.mtkView?.pixelBuffer = videoPixelBuffer
     }
     
 }

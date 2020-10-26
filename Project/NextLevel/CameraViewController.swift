@@ -27,7 +27,7 @@ import AVFoundation
 import Photos
 import Metal
 
-class CameraViewController: MTKViewController {
+class CameraViewController : UIViewController {
 
     // MARK: - UIViewController
 
@@ -37,8 +37,13 @@ class CameraViewController: MTKViewController {
     
     // MARK: - properties
     
-    internal var session: MetalCameraSession?
-    internal var previewView: UIView?
+    // MARK: - Metal View Properties
+    public let mtkView = PreviewMetalView()
+    private let sessionQueue = DispatchQueue(label: "SessionQueue", attributes: [], autoreleaseFrequency: .workItem)
+    private let dataOutputQueue = DispatchQueue(label: "VideoDataQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
+    private let processingQueue = DispatchQueue(label: "photo processing queue", attributes: [], autoreleaseFrequency: .workItem)
+    private var renderingEnabled = true
+
     internal var gestureView: UIView?
     internal var focusView: FocusIndicatorView?
     internal var controlDockView: UIView?
@@ -60,7 +65,6 @@ class CameraViewController: MTKViewController {
     // MARK: - object lifecycle
     
     public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
     }
     
@@ -76,11 +80,19 @@ class CameraViewController: MTKViewController {
         super.viewDidLoad()
         
         // Metal Camera Session Instantiate
-        session = MetalCameraSession(delegate:self)
+        mtkView.translatesAutoresizingMaskIntoConstraints = false
+        mtkView.preferredFramesPerSecond = 30
+        view.addSubview(mtkView)
+        NSLayoutConstraint.activate([
+            mtkView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            mtkView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mtkView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mtkView.topAnchor.constraint(equalTo: view.topAnchor),
+        ])
+        mtkView.setupView()
 
         self.view.backgroundColor = UIColor.black
         self.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        
         let screenBounds = UIScreen.main.bounds
 
         // preview
@@ -173,8 +185,8 @@ class CameraViewController: MTKViewController {
         nextLevel.photoDelegate = self
         nextLevel.metadataObjectsDelegate = self
         
-        // metal configuration
-        nextLevel.metalCameraSession = session!
+        // Metal configuration
+        nextLevel.mtkView = self.mtkView
         
         // video configuration
         nextLevel.videoConfiguration.preset = AVCaptureSession.Preset.hd1280x720
@@ -187,8 +199,7 @@ class CameraViewController: MTKViewController {
 
         // metadata objects configuration
         nextLevel.metadataObjectTypes = [AVMetadataObject.ObjectType.face, AVMetadataObject.ObjectType.qr]
-        
-        
+
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -198,8 +209,6 @@ class CameraViewController: MTKViewController {
            NextLevel.authorizationStatus(forMediaType: AVMediaType.audio) == .authorized {
             do {
                 try NextLevel.shared.start()
-                // Metal Camera Session Starting
-                self.session?.start()
             } catch {
                 print("NextLevel, failed to start camera session")
             }
@@ -211,8 +220,6 @@ class CameraViewController: MTKViewController {
                     do {
                         let nextLevel = NextLevel.shared
                         try nextLevel.start()
-                        // Metal Camera Session Starting
-                        self.session?.start()
                     } catch {
                         print("NextLevel, failed to start camera session")
                     }
@@ -228,8 +235,6 @@ class CameraViewController: MTKViewController {
                     do {
                         let nextLevel = NextLevel.shared
                         try nextLevel.start()
-                        // Metal Camera Session Starting
-                        self.session?.start()
                     } catch {
                         print("NextLevel, failed to start camera session")
                     }
@@ -246,6 +251,15 @@ class CameraViewController: MTKViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         NextLevel.shared.stop()
+    }
+    
+    @objc func didEnterBackground(notification: NSNotification) {
+        // Free up resources.
+        dataOutputQueue.async {
+            self.renderingEnabled = false
+            self.mtkView.pixelBuffer = nil
+            self.mtkView.flushTextureCache()
+        }
     }
 
 }
@@ -437,9 +451,19 @@ extension CameraViewController {
 
     @objc internal func handleFlipButton(_ button: UIButton) {
         NextLevel.shared.flipCaptureDevicePosition()
+        self.mtkView.pixelBuffer = nil
     }
     
     internal func handleFlashModeButton(_ button: UIButton) {
+        let flashView = UIView(frame: mtkView.frame)
+        self.view.addSubview(flashView)
+        flashView.backgroundColor = .black
+        flashView.layer.opacity = 0.2 // 1
+        UIView.animate(withDuration: 0.25, animations: {
+            flashView.layer.opacity = 0
+        }, completion: { _ in
+            flashView.removeFromSuperview()
+        })
     }
     
     @objc internal func handleSaveButton(_ button: UIButton) {
@@ -487,20 +511,8 @@ extension CameraViewController {
     }
     
     @objc internal func handleFocusTapGestureRecognizer(_ gestureRecognizer: UIGestureRecognizer) {
-        let tapPoint = gestureRecognizer.location(in: self.previewView)
-
-        if let focusView = self.focusView {
-            var focusFrame = focusView.frame
-            focusFrame.origin.x = CGFloat((tapPoint.x - (focusFrame.size.width * 0.5)).rounded())
-            focusFrame.origin.y = CGFloat((tapPoint.y - (focusFrame.size.height * 0.5)).rounded())
-            focusView.frame = focusFrame
-            
-            self.previewView?.addSubview(focusView)
-            focusView.startAnimation()
-        }
-        
-        //let adjustedPoint = NextLevel.shared.previewLayer.captureDevicePointConverted(fromLayerPoint: tapPoint)
-        //NextLevel.shared.focusExposeAndAdjustWhiteBalance(atAdjustedPoint: adjustedPoint)
+        let tapPoint = gestureRecognizer.location(in: self.mtkView)
+        NextLevel.shared.focusAtAdjustedPointOfInterest(adjustedPoint: tapPoint)
     }
     
 }
@@ -786,7 +798,8 @@ extension CameraViewController {
 extension CameraViewController: NextLevelMetadataOutputObjectsDelegate {
 
     func metadataOutputObjects(_ nextLevel: NextLevel, didOutput metadataObjects: [AVMetadataObject]) {
-        guard let previewView = self.previewView else {
+        /*
+        guard let previewView = self.mtkView else {
             return
         }
 
@@ -810,29 +823,6 @@ extension CameraViewController: NextLevelMetadataOutputObjectsDelegate {
                 previewView.addSubview(view)
             }
         }
-    }
-}
-
-// MARK: - MetalCameraSessionDelegate
-extension CameraViewController: MetalCameraSessionDelegate {
-    func metalCameraSession(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
-        self.texture = textures[0]
-    }
-    
-    func metalCameraSession(_ cameraSession: MetalCameraSession, didUpdateState state: MetalCameraSessionState, error: MetalCameraSessionError?) {
-        
-        if error == .captureSessionRuntimeError {
-            /**
-             *  In this app we are going to ignore capture session runtime errors
-             */
-            cameraSession.start()
-        }
-        
-        DispatchQueue.main.async {
-            self.title = "Metal camera: \(state)"
-            
-        }
-        
-        NSLog("Session changed state to \(state) with error: \(error?.localizedDescription ?? "None").")
+         */
     }
 }
